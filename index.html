@@ -1,57 +1,229 @@
-<!DOCTYPE html>
-<html lang="en-us">
-  <head>
-    <meta charset="UTF-8">
-    <title>Mongodb by xxitnet</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="stylesheet" type="text/css" href="stylesheets/normalize.css" media="screen">
-    <link href='https://fonts.googleapis.com/css?family=Open+Sans:400,700' rel='stylesheet' type='text/css'>
-    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen">
-    <link rel="stylesheet" type="text/css" href="stylesheets/github-light.css" media="screen">
-  </head>
-  <body>
-    <section class="page-header">
-      <h1 class="project-name">Mongodb</h1>
-      <h2 class="project-tagline"></h2>
-      <a href="https://github.com/xxitnet/mongodb" class="btn">View on GitHub</a>
-      <a href="https://github.com/xxitnet/mongodb/zipball/master" class="btn">Download .zip</a>
-      <a href="https://github.com/xxitnet/mongodb/tarball/master" class="btn">Download .tar.gz</a>
-    </section>
 
-    <section class="main-content">
-      <h3>
-<a id="welcome-to-github-pages" class="anchor" href="#welcome-to-github-pages" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Welcome to GitHub Pages.</h3>
+<!doctype>
+<html>
+<head>
+<meta charset="UTF-8">
+<link rel="stylesheet" href="css.css"></link>
+</head>
+<body>
+<h1 id="mongodb-">mongodb安装以及配置</h1>
+<ol>
+<li><p>安装mongodb </p>
+</li>
+<li><p>配置mongodb数据库存放路径以及日志文件路径（新建db目录以及mongodb.log日志文件）</p>
+</li>
+<li><p>进入mongodb安装目录下的bin文件夹，启动命令行，创建mongodb服务</p>
+<pre><code> mongod --storageEngine mmapv1 --dbpath G:\mongodb\db --logpath G:\mongodb\log\mongo.log --install --serviceName mongodb
+</code></pre></li>
+<li><p>在命令行输入mongo。进入mongodb的客户端</p>
+</li>
+<li><p>windows下删除服务</p>
+<pre><code> sc delete serviceName
+</code></pre></li>
+</ol>
+<h1 id="mongodb-">mongodb 数据库级命令</h1>
+<ol>
+<li><p>db 查看当前数据库 </p>
+<pre><code> db
+</code></pre></li>
+<li><p>show dbs 查看所有的数据库</p>
+<pre><code> show dbs
+</code></pre></li>
+<li><p>use dbName 切换数据库（没有改数据库也不会出错）</p>
+<pre><code> use blog 切换到blog这个数据库下，以后的操作都是针对这个数据库的
+</code></pre></li>
+</ol>
+<h1 id="mongodb-">mongodb 集合（表）级命令</h1>
+<ol>
+<li><p>show collections 显示当前数据库下的所有集合</p>
+<pre><code> show collections
+</code></pre></li>
+<li><p>db.createCollection(&#39;collectionName&#39;) 创建一个集合（表）</p>
+<pre><code> db.createCollection(&#39;users&#39;)
+</code></pre></li>
+</ol>
+<h1 id="mongodb-">mongodb 增加数据</h1>
+<ol>
+<li><p>insert  添加一条文档（记录）  默认会自动添加_id字段并且作为主键，如果数据库中含有该_id，那么会报错</p>
+<pre><code> db.users.insert({name:&#39;zhangsan&#39;,pwd:&quot;123&quot;})
+</code></pre></li>
+<li><p>save 插入或者更新数据。如果参数中没有加主键_id，那么相当于insert操作，如果有_id,那么相当于update操作</p>
+<pre><code> db.users.save({name:&quot;lisi&quot;,pwd:&quot;123&quot;}) --相当于insert
+ db.users.save({_id:1,name:&quot;wangwu&quot;,pwd:&quot;123&quot;})  ---相当于update
+</code></pre></li>
+</ol>
+<h1 id="mongo-">mongo 更新操作</h1>
+<ol>
+<li><p>update 文档替换（更新一条记录）。update后的值会和update前的值的主键_id做比较，如果update后没有设置_id，那么会用update前的_id作为主键，如果update后的值有_id,会比较2次的_id是否一致，如果不一致则会报错</p>
+<pre><code> db.users.update({name:&quot;lisi&quot;},{name:&quot;lisi&quot;,age:10,gender:&quot;man&quot;})  ---如果字段比较多，那么会很麻烦
+ var user=db.users.findOne({name:&quot;lisi&quot;})
+ user.age=10;
+ user.gender=&quot;man&quot;;
+ //db.users.update({name:&quot;lisi&quot;},user)   --如果记录中不止一条含有{那么：“lisi”}的记录可能会报错
+ db.users.update({_id:user._id},user)   --这样就不会报错，在关系型数据中也是这么更新的
+</code></pre></li>
+<li><p>$inc 修改器,修改器只更新更新修改器设置的字段，所以是局部更新。给某个字段进行自增（没有该字段，则新增这个字段，并把值设置为这个自增的值）</p>
+<pre><code> db.users.update({name:&quot;lisi&quot;},{$inc:{age:4}})   ---age字段只能是数值类型
+</code></pre></li>
+<li><p>$set 修改器  给文档/更新增加若干个字段，如果存在该字段，则会更新。更新内嵌文档，通过&quot;filed.key&quot;来更新</p>
+<pre><code> db.users.update({name:&quot;lisi&quot;},{$set:{age:20,hobby:{sign:&quot;qq爱&quot;,word:&quot;hello&quot;}}}})
+ db.users.update({name:&quot;lisi&quot;},{$set:{&quot;hobby.0&quot;:&quot;dance&quot;}})  ---更新内嵌文档。Object对象也是这样更新
+</code></pre></li>
+<li><p>$unset 修改器  删除文档的若干个字段</p>
+<pre><code> db.users.update({name:&quot;lisi&quot;},{$unset:{age:20}})
+</code></pre></li>
+<li><p>$push 数组修改器  向数组中追加一个元素，如果数组不存在，则自动添加数组</p>
+<pre><code> db.users.update({name:&quot;lisi&quot;},{$push:{hobby:1}})  ---向文档中的hobby字段添加一个元素1
+</code></pre></li>
+<li><p>$push+$each 向数组中添加多个元素</p>
+<pre><code> db.users.update({name:&quot;abc&quot;},{$push:{hobby:{$each:[2,3,4,5,6]}}})  ---向hobby数组中追加2，3，4，5，6
+</code></pre></li>
+<li><p>$addToSet 相当于$push+$ne  首先会判断数组中有木有这个元素，没有就添加，有则忽略</p>
+<pre><code> db.users.update({name:&quot;abc&quot;},{$addToSet:{hobby:5}})  ---如果hobby中有5则直接忽略
+ db.users.update({name:&quot;abc&quot;},{$addToSet:{hobby:{$each:[3,4,5,6,7,8,9]}}}})  ---向hobby中添加多个元素，存在的则忽略，否则追加
+</code></pre></li>
+<li><p>$pop 数组删除修改器</p>
+<pre><code> db.users.update({name:&quot;abc&quot;},{$pop:{hobby:1}})  --- 1:从末尾删除  -1:从头部删除
+ db.users.update({name:&quot;abc&quot;},{$pop:{hobby:-1}})  --- 1:从末尾删除  -1:从头部删除
+</code></pre></li>
+<li><p>$pull 数组删除修改器，删除所有匹配到的元素</p>
+<pre><code> db.users.update({name:&quot;abc&quot;,{$pull:{hobby:2}})  ---不能喝$each组合批量删除
+</code></pre></li>
+<li><p>$ 定位修改器</p>
+<pre><code class="lang-`">若数据如下：{name:&quot;abc&quot;,firends:[{name:&quot;zhangsan&quot;,age:11},{name:&quot;lisi&quot;,age:12}]}  ---数组内嵌文档
+db.users.find({&quot;firends.name&quot;:&quot;lisi&quot;})  ---可以直接使用内嵌文档的属性来定位
+db.users.update({&quot;firends.name&quot;:&quot;lisi&quot;},{$set:{&quot;friends.$.age&quot;:22}})  ---$定位到数组的第二个元素
+</code></pre>
+</li>
+<li><p>upsert  update的第三个参数  如果没有匹配到文档，如果设置upsert=true，则会添加这个文档，相当于insert</p>
+<pre><code>db.users.update({name:&quot;who&quot;},{$set:{sex:&#39;man&#39;},true})  ---没匹配到name:who的文档，所以直接增加，并添加了字段sex
+</code></pre></li>
+<li><p>multi  update的第四个参数  是否更新所有匹配到的文档</p>
+<pre><code>db.users.update({name:&quot;lisi&quot;},{$inc:{age:2}},false,true)  ---所有name=&quot;lisi&quot;的文档的age=age+2；
+</code></pre></li>
+<li><p>findAndModify:修改(更新/删除)文档并返回修改前（后）的文档。有以下几个参数。update不能知道结果，而findAndModify会返回结果，所以速度也会比较慢</p>
+<blockquote>
+<p>query:查询条件</p>
+<p>update:更新的值</p>
+<p>remove:是否删除</p>
+<p>sort:排序方式 1：倒叙 -1：顺序  更新或者删除是根据排序后的文档来进行操作的</p>
+<p>new:是否返回更新后的值  true是 false返回更新前的文档</p>
+<p>注意点：1.update和remove只能同时存在一个 2.一次只能操作一个文档   3.不能执行upsert操作，只能更新已存在的文档</p>
+</blockquote>
+<pre><code class="lang-`">db.users.findAndModify({query:{name:&quot;abc&quot;},update:{$set:{age:18}},new:true,sort:1})
 
-<p>This automatic page generator is the easiest way to create beautiful pages for all of your projects. Author your page content here <a href="https://guides.github.com/features/mastering-markdown/">using GitHub Flavored Markdown</a>, select a template crafted by a designer, and publish. After your page is generated, you can check out the new <code>gh-pages</code> branch locally. If you’re using GitHub Desktop, simply sync your repository and you’ll see the new branch.</p>
+db.users.findAndModify({query:{name:&quot;abc&quot;},remove:true,new:true,sort:1})
+</code></pre>
+</li>
+</ol>
+<h1 id="mongodb-">mongodb 查询</h1>
+<ol>
+<li><p>find(condition={},showFiled) 获取所有匹配的文档,第一个参数默认是{}，即获取所有，第二个参数设置需要显示的字段 1：显示 0：不显示。默认都会显示_id字段。设置_id:0就不会显示</p>
+<pre><code> db.users.find({},{_id:0,name:11,age:1})
+</code></pre></li>
+<li><p>条件查询</p>
+<blockquote>
+<p>$gt   大于</p>
+<p>$gte  大于等于</p>
+<p>$lt   小于</p>
+<p>$lte  小于等于</p>
+<p>$ne   不等于</p>
+<p>//   模糊查询</p>
+</blockquote>
+<pre><code> db.users.find({age:{$lte:35}})  ---查询年龄&lt;=35的所有文档
+ db.users.find({age:{$gte:35}})  ---查询年龄&gt;=35的所有文档
+ db.users.find({name:/吴/})      ---查询所有名字中有&quot;吴&quot;的所有文档
+</code></pre></li>
+<li><p>多条件查询</p>
+<blockquote>
+<p>$or 满足其中一个条件即可</p>
+<p>$in、$nin 在某个(不在)集合中即可</p>
+<p>$not 不满足即可  一般用在别的条件前面</p>
+<p>{age:18,gender:&#39;man&#39;}  相当于and</p>
+</blockquote>
+<pre><code> db.users.find({$or:[{age:{$gt:60}},{age:{$lt:18}}]})  ---匹配age&gt;60 or age&lt;18
+ db.users.find({age:{$in:[15,16,17,18]}})  ---匹配年龄为15，16，17，18的文档
+ db.users.find({age:{$gte:18},gender:&#39;man&#39;})  ---匹配age&gt;=18 and gender=&#39;man&#39;的文档
+ db.users.find({age:{$not:{$in:[11,12]}}})  ---匹配年龄不在11，12这个范围的文档，类似$nin
+</code></pre></li>
+<li><p>数组查询</p>
+<blockquote>
+<p>1.根据数组中元素查询</p>
+</blockquote>
+<pre><code> db.users.find({fruits:&quot;apple&quot;})  ---查询fruits字段的数组中是否有&quot;apple&quot;
+</code></pre><blockquote>
+<p>2.$all 查询数组中元素满足多个条件</p>
+</blockquote>
+<pre><code> db.users.find({fruits:{$all:[&quot;apple&quot;,&quot;banana&quot;]}})  ---查询fruit是数组中既有&quot;apple&quot;，又有&quot;banana&quot;的文档，$all的条件没有先后顺序
+</code></pre><blockquote>
+<p>3.完全匹配数组中的多个条件</p>
+</blockquote>
+<pre><code> db.users.find({fruits:[&quot;apple&quot;,&quot;banana&quot;]})  ---查询fruit是[&quot;apple&quot;,&quot;banana&quot;]的文档，个数和先后书序要完全一致才匹配
+</code></pre><blockquote>
+<p>4.根据下标匹配</p>
+</blockquote>
+<pre><code> db.users.find({&quot;fruit.0&quot;:&quot;apple&quot;})  ---匹配fruit[0]=&quot;apple&quot;的文档集合
+</code></pre><blockquote>
+<p>5.查询数组中元素为某个长度的文档几个,不能和$gt这些条件组合使用</p>
+</blockquote>
+<pre><code> db.users.find({fruit:{$size:3}})
+</code></pre><blockquote>
+<p>6.$slice 查询数组的子集，只能作为find的第二个参数，表示返回结果中过滤几个元素</p>
+</blockquote>
+<pre><code> db.users.find({shop:&quot;A&quot;,{fruit:{$slice:[1,2]}}})  ---满足shop:&quot;A&quot;的集合，从中把fruit字段中index为[1,2)的结果返回
+</code></pre></li>
+<li><p>内嵌文档匹配</p>
+<p>假设数据如下：</p>
+<p>{shop:&quot;A&quot;,fruits:{name:&quot;apple&quot;,count:10}}</p>
+<p>{shop:&quot;B&quot;,fruits:{name:&quot;peach&quot;,count:20}}</p>
+<p>1.精确匹配  精确匹配会按照键的数量和顺序完全一致才匹配</p>
+<pre><code> db.users.find({fruits:{name:&quot;apple&quot;,count:10}})
+ db.users.find({fruits:{count:10,name:&quot;apple&quot;}})   ---这样是查不出结果的，
+</code></pre><p>2.键值匹配</p>
+<pre><code> db.users.find({&quot;fruits.name&quot;:&quot;apple&quot;,&quot;fruits.count&quot;:10})
+ db.users.find({&quot;fruits.count&quot;:10,&quot;fruits.name&quot;:&quot;apple&quot;})  ---2者写法都是正确的
+</code></pre></li>
+<li><p>数组中嵌套文档</p>
+<p> 假设数据如下：</p>
+<p> {shop:&quot;A&quot;,fruits:[{name:&quot;apple&quot;,count:10},{name:&quot;peach&quot;,count:20}]}</p>
+<pre><code> db.users.find({fruits:{$elemMatch:{name:&quot;apple&quot;,count:10}}})
+ db.users.find({fruits:{$elemMatch:{count:10,name:&quot;apple&quot;}}})   ---2者都是正确写法
+</code></pre></li>
+<li><p>$where查询</p>
+<p> 假设数据如下：  匹配apple=peach的文档</p>
+<p>{apple:5,peach:5})</p>
+<p>{apple:5,peach:4})</p>
+<p>{apple:4,peach:5})</p>
+<p>{apple:4,peach:4})</p>
+<pre><code>db.users.find({$where:function(){return this.apple===this.peach}})
+db.users.find({$where:&quot;this.apple===this.peach&quot;})
+</code></pre></li>
+<li><p>limit  限制返回多少结果集</p>
+<pre><code> db.users.find({name:&quot;abc&quot;}).limit(5)  ---取出查询结果的前5条
+</code></pre></li>
+<li><p>skip   略过匹配到的前多少条数据</p>
+<pre><code> db.users.find({name:&quot;abc&quot;}).skip(5)   ---略过前5条数据，从第6条开始取
+ db.users.find({name:&quot;abc&quot;}).skip(5).limit(5)  ---去第6-10之间的5条数据
+</code></pre></li>
+<li><p>sort  根据文档的键排序   1：升序   -1：降序</p>
+<pre><code> db.users.find({name:&quot;abc&quot;}).sort({age:1,score:-1})
+</code></pre></li>
+<li><p>null匹配查询</p>
+<pre><code> db.users.find({name:null})  ---匹配name=null 或者没有name字段的文档
+ db.users.find({name:{$in:[null],$exists:true}})  ---匹配name字段存在并且name=null的文档
+</code></pre></li>
+<li><p>distinct  按键去重， 返回键对应值的一个数组</p>
+<pre><code> db.users.distinct(&quot;name&quot;,{age:{$gt:30}})  ---返回年龄大于30的所有文档的不同name集合
+</code></pre></li>
+<li><p>group 分组</p>
+<pre><code>db.users.group({key:{score:1},$reduce:function(doc,pre){
+pre.arr.push(doc.name)
+},initial:{arr:[]}})   
 
-<h3>
-<a id="designer-templates" class="anchor" href="#designer-templates" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Designer Templates</h3>
+group理解：先按照key来分组，然后根据initial来为每个分组初始化一个累加器，然后在分组后的每个文档执行$reduce函数，把需要的字段插入到累加器中
+</code></pre></li>
+</ol>
 
-<p>We’ve crafted some handsome templates for you to use. Go ahead and click 'Continue to layouts' to browse through them. You can easily go back to edit your page before publishing. After publishing your page, you can revisit the page generator and switch to another theme. Your Page content will be preserved.</p>
-
-<h3>
-<a id="creating-pages-manually" class="anchor" href="#creating-pages-manually" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Creating pages manually</h3>
-
-<p>If you prefer to not use the automatic generator, push a branch named <code>gh-pages</code> to your repository to create a page manually. In addition to supporting regular HTML content, GitHub Pages support Jekyll, a simple, blog aware static site generator. Jekyll makes it easy to create site-wide headers and footers without having to copy them across every page. It also offers intelligent blog support and other advanced templating features.</p>
-
-<h3>
-<a id="authors-and-contributors" class="anchor" href="#authors-and-contributors" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Authors and Contributors</h3>
-
-<p>You can @mention a GitHub username to generate a link to their profile. The resulting <code>&lt;a&gt;</code> element will link to the contributor’s GitHub Profile. For example: In 2007, Chris Wanstrath (<a href="https://github.com/defunkt" class="user-mention">@defunkt</a>), PJ Hyett (<a href="https://github.com/pjhyett" class="user-mention">@pjhyett</a>), and Tom Preston-Werner (<a href="https://github.com/mojombo" class="user-mention">@mojombo</a>) founded GitHub.</p>
-
-<h3>
-<a id="support-or-contact" class="anchor" href="#support-or-contact" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Support or Contact</h3>
-
-<p>Having trouble with Pages? Check out our <a href="https://help.github.com/pages">documentation</a> or <a href="https://github.com/contact">contact support</a> and we’ll help you sort it out.</p>
-
-      <footer class="site-footer">
-        <span class="site-footer-owner"><a href="https://github.com/xxitnet/mongodb">Mongodb</a> is maintained by <a href="https://github.com/xxitnet">xxitnet</a>.</span>
-
-        <span class="site-footer-credits">This page was generated by <a href="https://pages.github.com">GitHub Pages</a> using the <a href="https://github.com/jasonlong/cayman-theme">Cayman theme</a> by <a href="https://twitter.com/jasonlong">Jason Long</a>.</span>
-      </footer>
-
-    </section>
-
-  
-  </body>
+</body>
 </html>
+     
